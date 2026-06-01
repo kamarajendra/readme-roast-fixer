@@ -1,5 +1,10 @@
 # README Roast & Fixer
 
+[![CI](https://github.com/kamarajendra/readme-roast-fixer/actions/workflows/ci.yml/badge.svg)](https://github.com/kamarajendra/readme-roast-fixer/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kamarajendra/readme-roast-fixer)](https://github.com/kamarajendra/readme-roast-fixer/releases)
+[![License](https://img.shields.io/github/license/kamarajendra/readme-roast-fixer)](https://github.com/kamarajendra/readme-roast-fixer/blob/main/LICENSE)
+[![Live Demo](https://img.shields.io/badge/demo-live-6d5ef8)](https://readme-roast-fixer.vercel.app)
+
 README Roast & Fixer is a rule-based Next.js app that audits project documentation and highlights the gaps that make a repository feel unfinished. Paste Markdown or fetch a public GitHub README, then review a scorecard, category breakdown, and prioritized fixes.
 
 ## Screenshot
