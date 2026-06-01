@@ -36,11 +36,22 @@ Please open an issue before large changes.
 MIT
 `;
 
-function scoreTone(score: number) {
-  if (score >= 80) return "var(--color-success)";
-  if (score >= 60) return "var(--color-warning)";
-  return "var(--color-danger)";
+function scoreRing(score: number) {
+  if (score >= 80) return { color: "var(--color-score-high)", label: "Ship it" };
+  if (score >= 60) return { color: "var(--color-score-mid)", label: "Needs work" };
+  return { color: "var(--color-score-low)", label: "Rough" };
 }
+
+const CATEGORY_ICONS: Record<string, string> = {
+  projectSummary: "[S]",
+  installSetup: "[I]",
+  usageExamples: "[U]",
+  screenshotsDemo: "[M]",
+  license: "[L]",
+  contributionDocs: "[C]",
+  trustSignals: "[T]",
+  releaseReadiness: "[R]",
+};
 
 function buildMarkdownReport(markdown: string, analysis: ReturnType<typeof analyzeReadme>) {
   const title = markdown.match(/^#\s+(.+)$/m)?.[1] ?? "README Review";
@@ -72,8 +83,11 @@ export function ReadmeRoastApp() {
   const [markdown, setMarkdown] = useState(SAMPLE_MARKDOWN);
   const [status, setStatus] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const analysis = useMemo(() => analyzeReadme(markdown), [markdown]);
   const report = useMemo(() => buildMarkdownReport(markdown, analysis), [analysis, markdown]);
+
+  const ring = scoreRing(analysis.overallScore);
 
   async function handleFetchReadme() {
     setStatus(null);
@@ -102,154 +116,228 @@ export function ReadmeRoastApp() {
 
   async function handleCopyReport() {
     if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      setStatus("Clipboard copy is unavailable here. Copy the report from the panel below.");
+      setStatus("Clipboard copy is unavailable here.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(report);
-      setStatus("Copied markdown report to clipboard.");
+      setStatus("Copied to clipboard.");
     } catch {
-      setStatus("Clipboard permission was denied. Copy the report from the panel below.");
+      setStatus("Clipboard permission was denied.");
     }
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10 lg:py-10">
-      <section className="grid gap-6 rounded-[28px] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 shadow-[0_18px_60px_rgba(29,32,66,0.08)] lg:grid-cols-[1.05fr_0.95fr] lg:p-8">
+    <main className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-1 flex-col px-4 font-mono py-4 sm:px-6 lg:px-8 lg:py-8">
+      {/* Terminal-style status bar */}
+      <header className="mb-6 flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-2.5 text-xs uppercase tracking-widest text-[var(--color-muted)]">
+        <span className="text-[var(--color-accent)]">readme-roast v0.1.2</span>
+        <span className="h-3 w-px bg-[var(--color-border)]" />
+        <span>analyzer ready</span>
+        <span className="ml-auto hidden sm:inline">{new Date().toLocaleDateString()}</span>
+      </header>
+
+      {/* Hero + Input */}
+      <section className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-5">
-          <div className="inline-flex rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-sm font-medium text-[var(--color-accent)]">
-            Rule-based README diagnostics
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-[var(--color-accent)] text-sm font-bold text-black">
+              RF
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--color-accent)]">
+              Rule-based README diagnostics
+            </span>
           </div>
-          <div className="space-y-3">
-            <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-              Roast weak docs, then turn them into something a maintainer would trust.
+          <div className="space-y-4">
+            <h1 className="max-w-2xl text-4xl font-black leading-none tracking-tight sm:text-5xl lg:text-6xl">
+              Roast your
+              <br />
+              <span className="text-[var(--color-accent)]">README.</span>
             </h1>
-            <p className="max-w-2xl text-lg leading-8 text-[var(--color-muted)]">
-              Score README quality across setup clarity, examples, visual proof, and maintenance signals. No AI API, no vague advice.
+            <p className="max-w-xl leading-relaxed text-[var(--color-muted)]">
+              No fluff, no AI. Seven rule categories that score setup clarity, proof, trust signals, and maintenance readiness. Paste a README or pull one from any public GitHub repo.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="flex flex-wrap gap-4 text-xs">
             {[
-              ["Scorecard", "7 categories"],
-              ["Priority fixes", "Sorted by severity"],
-              ["Quick wins", "Actionable rewrite prompts"],
+              ["7 categories", "scored"],
+              ["Priority fixes", "by severity"],
+              ["Copy report", "markdown export"],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-canvas)] p-4">
-                <div className="text-sm text-[var(--color-muted)]">{label}</div>
-                <div className="mt-2 text-xl font-semibold">{value}</div>
+              <div key={label} className="rounded border border-[var(--color-border)] bg-[var(--color-panel)] px-3 py-2">
+                <span className="text-[var(--color-accent)]">{label}</span>
+                <span className="ml-1.5 text-[var(--color-muted)]">{value}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4 rounded-[24px] bg-[var(--color-canvas)] p-5">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-[var(--color-muted)]">GitHub repo URL</span>
-            <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="space-y-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
+          <label className="block space-y-1.5">
+            <span className="text-xs uppercase tracking-widest text-[var(--color-muted)]">GitHub URL</span>
+            <div className="flex gap-2">
               <input
                 value={repoUrl}
                 onChange={(event) => setRepoUrl(event.target.value)}
                 placeholder="https://github.com/owner/repo"
-                className="min-w-0 flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-3 outline-none focus:border-[var(--color-accent)]"
+                className="min-w-0 flex-1 rounded border border-[var(--color-border)] bg-[var(--color-canvas)] px-3 py-2 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)]"
               />
               <button
                 type="button"
                 onClick={handleFetchReadme}
                 disabled={isFetching}
-                className="rounded-2xl bg-[var(--color-accent)] px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isFetching ? "Fetching..." : "Fetch README"}
+                {isFetching ? "Fetching..." : "Pull"}
               </button>
             </div>
           </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-[var(--color-muted)]">README Markdown</span>
+          <label className="block space-y-1.5">
+            <span className="text-xs uppercase tracking-widest text-[var(--color-muted)]">README Markdown</span>
             <textarea
               value={markdown}
               onChange={(event) => setMarkdown(event.target.value)}
-              className="min-h-[280px] w-full rounded-[22px] border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-3 font-mono text-sm outline-none focus:border-[var(--color-accent)]"
+              className="min-h-[200px] w-full rounded border border-[var(--color-border)] bg-[var(--color-canvas)] px-3 py-2 text-sm leading-relaxed text-[var(--foreground)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)]"
             />
           </label>
-
-          {status ? <p className="text-sm text-[var(--color-muted)]">{status}</p> : null}
+          {status ? <p className="text-xs text-[var(--color-muted)]">{status}</p> : null}
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr]">
-        <div className="space-y-6 rounded-[28px] border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-          <div>
-            <div className="text-sm uppercase tracking-[0.22em] text-[var(--color-muted)]">Overall</div>
-            <div className="mt-3 flex items-end gap-3">
-              <div className="text-6xl font-semibold">{analysis.overallScore}</div>
-              <div className="pb-2 text-lg text-[var(--color-muted)]">/ 100</div>
+      <div className="mb-8 grid gap-6 lg:grid-cols-[280px_1fr]">
+        {/* Score sidebar */}
+        <div className="space-y-4">
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-5 text-center">
+            <div className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Score</div>
+            <div className="mt-3 flex items-baseline justify-center gap-1">
+              <span className="text-6xl font-black" style={{ color: ring.color }}>
+                {analysis.overallScore}
+              </span>
+              <span className="text-sm text-[var(--color-muted)]">/100</span>
             </div>
-            <div className="mt-4 inline-flex rounded-full px-3 py-1 text-sm font-medium" style={{ background: `${scoreTone(analysis.overallScore)}1f`, color: scoreTone(analysis.overallScore) }}>
-              {analysis.overallScore >= 80 ? "Publishable" : analysis.overallScore >= 60 ? "Needs polish" : "Needs repair"}
+            <div
+              className="mt-3 inline-block rounded px-3 py-1 text-xs font-bold uppercase tracking-wider"
+              style={{ background: `color-mix(in oklab, ${ring.color} 20%, transparent)`, color: ring.color }}
+            >
+              {ring.label}
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold">What is already working</h2>
-            <ul className="space-y-3 text-sm leading-6 text-[var(--color-muted)]">
-              {analysis.strengths.length > 0 ? analysis.strengths.map((strength) => <li key={strength}>{strength}</li>) : <li>No standout strengths yet. Start with the highest-severity fixes.</li>}
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
+            <div className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Strengths</div>
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--color-muted)]">
+              {analysis.strengths.length > 0
+                ? analysis.strengths.map((strength) => <li key={strength} className="flex gap-2 before:mt-0.5 before:text-[var(--color-score-high)] before:content-['+']">{strength}</li>)
+                : <li className="text-[var(--color-score-low)]">No strengths detected yet.</li>}
             </ul>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowReport(!showReport)}
+            className="w-full rounded border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            {showReport ? "Hide report" : "Show export report"}
+          </button>
+
+          {showReport ? (
+            <div className="space-y-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Markdown</span>
+                <button
+                  type="button"
+                  onClick={handleCopyReport}
+                  className="rounded border border-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent)]"
+                >
+                  Copy
+                </button>
+              </div>
+              <pre className="overflow-x-auto whitespace-pre-wrap text-xs leading-relaxed text-[var(--color-muted)]">
+                {report}
+              </pre>
+            </div>
+          ) : null}
         </div>
 
+        {/* Main results area */}
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {/* Category grid */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {analysis.categories.map((category) => (
-              <article key={category.category} className="rounded-[24px] border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
-                <div className="text-sm font-medium text-[var(--color-muted)]">{category.label}</div>
-                <div className="mt-3 text-3xl font-semibold">{category.score}<span className="text-base font-medium text-[var(--color-muted)]">/{category.maxScore}</span></div>
-                <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">{category.summary}</p>
+              <article
+                key={category.category}
+                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-4 transition-colors hover:border-[var(--color-accent)]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--color-accent)] font-semibold">
+                    {CATEGORY_ICONS[category.category] ?? "[?]"}
+                  </span>
+                  <span className="text-sm font-bold" style={{ color: category.score >= category.maxScore * 0.7 ? "var(--color-score-high)" : "var(--color-score-mid)" }}>
+                    {category.score}/{category.maxScore}
+                  </span>
+                </div>
+                <div className="mt-2 text-sm font-semibold">{category.label}</div>
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-muted)]">{category.summary}</p>
               </article>
             ))}
           </div>
 
-          <div className="rounded-[28px] border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-semibold">Priority fixes</h2>
-              <span className="text-sm text-[var(--color-muted)]">What hurts trust first</span>
+          {/* Findings */}
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-bold uppercase tracking-widest">Priority fixes</h2>
+              <span className="rounded bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs text-[var(--color-accent)]">
+                {analysis.findings.length}
+              </span>
             </div>
 
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-3">
               {analysis.findings.map((finding) => (
-                <article key={finding.id} className="rounded-[22px] border border-[var(--color-border)] bg-[var(--color-canvas)] p-5">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]" style={{ background: finding.severity === "high" ? "color-mix(in oklab, var(--color-danger) 14%, transparent)" : finding.severity === "medium" ? "color-mix(in oklab, var(--color-warning) 18%, transparent)" : "color-mix(in oklab, var(--color-accent) 14%, transparent)", color: finding.severity === "high" ? "var(--color-danger)" : finding.severity === "medium" ? "oklch(0.5 0.12 82)" : "var(--color-accent)" }}>
+                <article key={finding.id} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-4">
+                  <div className="flex flex-wrap items-start gap-3">
+                    <span
+                      className="mt-0.5 rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.2em]"
+                      style={{
+                        background:
+                          finding.severity === "high"
+                            ? "color-mix(in oklab, var(--color-danger) 25%, transparent)"
+                            : finding.severity === "medium"
+                              ? "color-mix(in oklab, var(--color-score-mid) 25%, transparent)"
+                              : "color-mix(in oklab, var(--color-accent) 20%, transparent)",
+                        color:
+                          finding.severity === "high"
+                            ? "var(--color-danger)"
+                            : finding.severity === "medium"
+                              ? "var(--color-score-mid)"
+                              : "var(--color-accent)",
+                      }}
+                    >
                       {finding.severity}
                     </span>
-                    <h3 className="text-lg font-semibold">{finding.title}</h3>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">{finding.detail}</p>
-                  <div className="mt-4 rounded-2xl bg-[var(--color-panel)] p-4 text-sm leading-6">
-                    <span className="font-semibold">Suggested fix:</span> {finding.suggestion}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-bold">{finding.title}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted)]">{finding.detail}</p>
+                      <div className="mt-2 rounded border border-dashed border-[var(--color-border)] bg-[var(--color-panel)] p-3 text-xs leading-relaxed">
+                        <span className="font-semibold text-[var(--color-accent)]">fix:</span> {finding.suggestion}
+                      </div>
+                    </div>
                   </div>
                 </article>
               ))}
             </div>
           </div>
-
-          <div className="rounded-[28px] border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-semibold">Export-ready markdown report</h2>
-              <button
-                type="button"
-                onClick={handleCopyReport}
-                className="rounded-2xl border border-[var(--color-border)] px-4 py-2 text-sm font-medium"
-              >
-                Copy report
-              </button>
-            </div>
-            <pre className="mt-5 whitespace-pre-wrap rounded-[22px] bg-[var(--color-canvas)] p-4 text-sm leading-6 text-[var(--color-muted)] overflow-x-auto">
-              {report}
-            </pre>
-          </div>
         </div>
-      </section>
+      </div>
+
+      {/* Footer terminal bar */}
+      <footer className="mt-auto flex items-center gap-3 border-t border-[var(--color-border)] pt-4 text-[11px] uppercase tracking-widest text-[var(--color-muted)]">
+        <span>{analysis.categories.length} categories</span>
+        <span className="h-3 w-px bg-[var(--color-border)]" />
+        <span>{analysis.findings.length} issues</span>
+        <span className="h-3 w-px bg-[var(--color-border)]" />
+        <span>{analysis.strengths.length} strengths</span>
+      </footer>
     </main>
   );
 }
