@@ -86,6 +86,18 @@ export function ReadmeRoastApp() {
   const [showReport, setShowReport] = useState(false);
   const analysis = useMemo(() => analyzeReadme(markdown), [markdown]);
   const report = useMemo(() => buildMarkdownReport(markdown, analysis), [analysis, markdown]);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  function handleResetSample() {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+    setMarkdown(SAMPLE_MARKDOWN);
+    setStatus("Reset to sample README.");
+    setConfirmReset(false);
+    setTimeout(() => setConfirmReset(false), 3000);
+  }
 
   const ring = scoreRing(analysis.overallScore);
 
@@ -201,6 +213,15 @@ export function ReadmeRoastApp() {
               className="min-h-[200px] w-full rounded border border-[var(--color-border)] bg-[var(--color-canvas)] px-3 py-2 text-sm leading-relaxed text-[var(--foreground)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)]"
             />
           </label>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleResetSample}
+              className="rounded border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            >
+              {confirmReset ? "Click again to confirm reset" : "Reset to sample"}
+            </button>
+          </div>
           {status ? <p className="text-xs text-[var(--color-muted)]">{status}</p> : null}
         </div>
       </section>
