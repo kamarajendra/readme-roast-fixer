@@ -44,6 +44,10 @@ This repo tracks service metadata, owners, and delivery risks.
 
 Open an issue first and check the roadmap.
 
+## Release
+
+See the changelog for version history and release notes.
+
 ## License
 
 MIT
@@ -59,5 +63,11 @@ MIT
     const result = analyzeReadme("# Hello\n\nSmall project.");
     expect(result.findings[0]?.id).toBe("summary-gap");
     expect(result.findings[1]?.id).toBe("setup-gap");
+  });
+
+  it("flags missing release-readiness signals", () => {
+    const result = analyzeReadme(`# Tool\n\nOverview text with enough detail to avoid an empty score.\n\n## Install\n\n\`\`\`bash\nnpm install\n\`\`\``);
+
+    expect(result.findings.some((finding) => finding.id === "release-readiness-gap")).toBe(true);
   });
 });
