@@ -101,8 +101,17 @@ export function ReadmeRoastApp() {
   }
 
   async function handleCopyReport() {
-    await navigator.clipboard.writeText(report);
-    setStatus("Copied markdown report to clipboard.");
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      setStatus("Clipboard copy is unavailable here. Copy the report from the panel below.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(report);
+      setStatus("Copied markdown report to clipboard.");
+    } catch {
+      setStatus("Clipboard permission was denied. Copy the report from the panel below.");
+    }
   }
 
   return (
@@ -235,7 +244,7 @@ export function ReadmeRoastApp() {
                 Copy report
               </button>
             </div>
-            <pre className="mt-5 overflow-x-auto rounded-[22px] bg-[var(--color-canvas)] p-4 text-sm leading-6 text-[var(--color-muted)] whitespace-pre-wrap">
+            <pre className="mt-5 whitespace-pre-wrap rounded-[22px] bg-[var(--color-canvas)] p-4 text-sm leading-6 text-[var(--color-muted)] overflow-x-auto">
               {report}
             </pre>
           </div>
