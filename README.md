@@ -6,6 +6,10 @@ README Roast & Fixer is a rule-based Next.js app that audits project documentati
 
 ![README Roast & Fixer dashboard](public/screenshots/readme-roast-dashboard.png)
 
+## Live demo
+
+https://readme-roast-fixer.vercel.app
+
 ## Why it exists
 
 Most repos lose trust in the first thirty seconds. Missing setup steps, weak examples, no screenshots, and no visible maintenance story make otherwise solid projects look abandoned. This tool gives maintainers a fast, repeatable way to review README quality before they publish, share, or hand a repo to a recruiter.

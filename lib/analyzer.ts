@@ -5,7 +5,8 @@ export type RuleCategory =
   | "screenshotsDemo"
   | "license"
   | "contributionDocs"
-  | "trustSignals";
+  | "trustSignals"
+  | "releaseReadiness";
 
 export type Severity = "high" | "medium" | "low";
 
@@ -40,6 +41,7 @@ const CATEGORY_LABELS: Record<RuleCategory, string> = {
   license: "License",
   contributionDocs: "Contribution & Docs",
   trustSignals: "Trust Signals",
+  releaseReadiness: "Release Readiness",
 };
 
 function hasHeading(markdown: string, patterns: RegExp[]) {
@@ -148,6 +150,14 @@ export function analyzeReadme(markdown: string): ReadmeAnalysis {
       ],
       "Badges, deployment links, and architecture notes build confidence.",
     ),
+    scoreCategory(
+      "releaseReadiness",
+      [
+        { ok: hasAny(source, [/changelog/i, /release/i, /version/i]), points: 5 },
+        { ok: hasAny(source, [/roadmap/i, /next steps/i, /planned/i]), points: 5 },
+      ],
+      "Release and roadmap cues make the repo feel actively maintained.",
+    ),
   ];
 
   const findings: Finding[] = [];
@@ -227,6 +237,16 @@ export function analyzeReadme(markdown: string): ReadmeAnalysis {
     });
   } else {
     strengths.push("The README includes trust-building details beyond the minimum feature list.");
+  }
+
+  if (categories[7].score < 7) {
+    findings.push({
+      id: "release-readiness-gap",
+      severity: "low",
+      title: "Release story needs more visibility",
+      detail: "Visitors trust repos more when changelog and roadmap signals are visible from the README.",
+      suggestion: "Mention release notes, version history, or roadmap links directly in the README.",
+    });
   }
 
   const totalScore = categories.reduce((sum, category) => sum + category.score, 0);
