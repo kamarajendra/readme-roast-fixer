@@ -42,12 +42,38 @@ function scoreTone(score: number) {
   return "var(--color-danger)";
 }
 
+function buildMarkdownReport(markdown: string, analysis: ReturnType<typeof analyzeReadme>) {
+  const title = markdown.match(/^#\s+(.+)$/m)?.[1] ?? "README Review";
+
+  return [
+    `# ${title} README Report`,
+    "",
+    `Overall score: **${analysis.overallScore}/100**`,
+    "",
+    "## Category breakdown",
+    ...analysis.categories.map(
+      (category) => `- **${category.label}:** ${category.score}/${category.maxScore} - ${category.summary}`,
+    ),
+    "",
+    "## Priority fixes",
+    ...analysis.findings.map(
+      (finding) => `- **${finding.title} (${finding.severity})**: ${finding.suggestion}`,
+    ),
+    "",
+    "## Strengths",
+    ...(analysis.strengths.length > 0
+      ? analysis.strengths.map((strength) => `- ${strength}`)
+      : ["- No standout strengths yet."]),
+  ].join("\n");
+}
+
 export function ReadmeRoastApp() {
   const [repoUrl, setRepoUrl] = useState("");
   const [markdown, setMarkdown] = useState(SAMPLE_MARKDOWN);
   const [status, setStatus] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const analysis = useMemo(() => analyzeReadme(markdown), [markdown]);
+  const report = useMemo(() => buildMarkdownReport(markdown, analysis), [analysis, markdown]);
 
   async function handleFetchReadme() {
     setStatus(null);
@@ -72,6 +98,11 @@ export function ReadmeRoastApp() {
     } finally {
       setIsFetching(false);
     }
+  }
+
+  async function handleCopyReport() {
+    await navigator.clipboard.writeText(report);
+    setStatus("Copied markdown report to clipboard.");
   }
 
   return (
@@ -191,6 +222,22 @@ export function ReadmeRoastApp() {
                 </article>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-[28px] border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-semibold">Export-ready markdown report</h2>
+              <button
+                type="button"
+                onClick={handleCopyReport}
+                className="rounded-2xl border border-[var(--color-border)] px-4 py-2 text-sm font-medium"
+              >
+                Copy report
+              </button>
+            </div>
+            <pre className="mt-5 overflow-x-auto rounded-[22px] bg-[var(--color-canvas)] p-4 text-sm leading-6 text-[var(--color-muted)] whitespace-pre-wrap">
+              {report}
+            </pre>
           </div>
         </div>
       </section>
