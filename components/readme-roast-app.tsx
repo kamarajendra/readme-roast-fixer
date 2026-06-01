@@ -273,6 +273,22 @@ export function ReadmeRoastApp() {
                 >
                   Copy
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const blob = new Blob([report], { type: "text/markdown" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "readme-report.md";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    setStatus("Report downloaded as .md file.");
+                  }}
+                  className="rounded border border-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent)]"
+                >
+                  Download
+                </button>
               </div>
               <pre className="overflow-x-auto whitespace-pre-wrap text-xs leading-relaxed text-[var(--color-muted)]">
                 {report}
